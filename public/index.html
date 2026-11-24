@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07080c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<title>TV Remote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080c;--panel:#11131a;--key:#1a1d27;--key-hi:#242838;--line:#ffffff12;
+  --txt:#eef0f6;--dim:#8a90a3;--acc:#5b8cff;--acc2:#a66bff;--red:#ff4d6a;--ok:#3ddc97;
+  --r:22px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:Manrope,system-ui,sans-serif;overscroll-behavior:none}
+body{background:radial-gradient(120% 60% at 50% -10%,#1b2140 0%,var(--bg) 60%) fixed}
+.app{max-width:440px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 90px)}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.brand{display:flex;flex-direction:column}
+.brand b{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.brand small{color:var(--dim);font-size:12px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.dot.off{background:var(--red)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.k{background:linear-gradient(180deg,var(--key-hi),var(--key));border:1px solid var(--line);border-radius:18px;height:58px;display:grid;place-items:center;font-weight:600;font-size:14px;transition:transform .08s,filter .08s;box-shadow:0 6px 18px #0006, inset 0 1px 0 #ffffff10}
+.k:active,.k.pressed{transform:scale(.93);filter:brightness(1.35)}
+.k svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.power{width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ff7189,var(--red));border:0;box-shadow:0 0 24px #ff4d6a66}
+.power svg{stroke:#fff}
+.grid{display:grid;gap:10px}
+.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+section{display:none;animation:fade .25s}
+section.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+.label{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin:20px 4px 8px}
+/* d-pad */
+.dpad{position:relative;width:min(78vw,290px);aspect-ratio:1;margin:8px auto 18px;border-radius:50%;background:conic-gradient(from 45deg,#1d2130,#151822,#1d2130,#151822,#1d2130);border:1px solid var(--line);box-shadow:0 20px 50px #000a,inset 0 2px 0 #ffffff0d}
+.dpad button{position:absolute;display:grid;place-items:center;color:var(--dim);transition:color .1s}
+.dpad button:active{color:#fff}
+.dpad svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+.dpad .u{top:0;left:30%;width:40%;height:30%}.dpad .d{bottom:0;left:30%;width:40%;height:30%}
+.dpad .l{left:0;top:30%;width:30%;height:40%}.dpad .r{right:0;top:30%;width:30%;height:40%}
+.dpad .ok{inset:30%;border-radius:50%;background:linear-gradient(140deg,var(--acc),var(--acc2));color:#fff;font-weight:800;font-size:16px;box-shadow:0 8px 30px #5b8cff66}
+.dpad .ok:active{transform:scale(.94)}
+.rocker{display:flex;flex-direction:column;background:linear-gradient(180deg,var(--key-hi),var(--key));border:1px solid var(--line);border-radius:28px;overflow:hidden}
+.rocker button{height:58px;display:grid;place-items:center}
+.rocker button:active{background:#ffffff14}
+.rocker span{text-align:center;font-size:10px;color:var(--dim);letter-spacing:.15em;padding:2px 0}
+.rocker svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.mid{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;align-items:center}
+.mid .grid{gap:12px}
+.colors{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.colors .k{height:12px;border-radius:8px;padding:0}
+/* tabs */
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);display:flex;gap:4px;padding:6px;background:#11131add;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:24px;box-shadow:0 10px 40px #000c;z-index:5}
+nav button{padding:10px 14px;border-radius:18px;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600}
+nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav button.active{background:#ffffff10;color:#fff}
+/* touchpad */
+.pad{height:52vh;border-radius:var(--r);background:repeating-radial-gradient(circle at 50% 50%,#ffffff05 0 1px,transparent 1px 22px),var(--panel);border:1px solid var(--line);display:grid;place-items:center;color:var(--dim);font-size:13px;touch-action:none;position:relative;overflow:hidden}
+.pad .ripple{position:absolute;width:60px;height:60px;border-radius:50%;background:var(--acc);opacity:.4;transform:translate(-50%,-50%) scale(0);animation:rip .4s forwards;pointer-events:none}
+@keyframes rip{to{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+/* inputs */
+input{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:16px;padding:15px 16px;font:inherit;font-size:16px;outline:none;user-select:text;-webkit-user-select:text}
+input:focus{border-color:var(--acc)}
+.row{display:flex;gap:10px}
+.row .k{padding:0 18px;flex-shrink:0}
+.btn{background:linear-gradient(140deg,var(--acc),var(--acc2));color:#fff;border-radius:16px;padding:15px;font-weight:800;width:100%}
+.btn.ghost{background:var(--key);border:1px solid var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.app-tile{aspect-ratio:1;border-radius:20px;display:flex;flex-direction:column;justify-content:flex-end;padding:12px;font-weight:800;font-size:13px;text-align:left;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 24px #0007}
+.app-tile:active{transform:scale(.95)}
+.app-tile i{position:absolute;top:10px;left:12px;font-style:normal;font-size:26px;font-weight:800;opacity:.95;letter-spacing:-.04em}
+.toast{position:fixed;top:calc(env(safe-area-inset-top) + 14px);left:50%;transform:translate(-50%,-120%);background:#1d2130;border:1px solid var(--line);padding:10px 16px;border-radius:14px;font-size:13px;transition:transform .3s;z-index:9;max-width:90vw}
+.toast.show{transform:translate(-50%,0)}
+.toast.err{border-color:var(--red)}
+.info div{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.info div span:first-child{color:var(--dim)}
+.hint{color:var(--dim);font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><b id="tvName">Samsung TV</b><small><span class="dot" id="dot"></span><span id="stat">Checking…</span></small></div>
+    <button class="power" data-key="KEY_POWER" aria-label="Power"><svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg></button>
+  </header>
+
+  <!-- REMOTE -->
+  <section id="remote" class="active">
+    <div class="grid g4">
+      <button class="k" data-key="KEY_SOURCE">Source</button>
+      <button class="k" data-key="KEY_HOME" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></button>
+      <button class="k" data-key="KEY_MENU">Menu</button>
+      <button class="k" data-key="KEY_TOOLS">Tools</button>
+    </div>
+
+    <div class="dpad">
+      <button class="u" data-key="KEY_UP" data-repeat aria-label="Up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="l" data-key="KEY_LEFT" data-repeat aria-label="Left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="ok" data-key="KEY_ENTER">OK</button>
+      <button class="r" data-key="KEY_RIGHT" data-repeat aria-label="Right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button class="d" data-key="KEY_DOWN" data-repeat aria-label="Down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+
+    <div class="mid">
+      <div class="rocker">
+        <button data-key="KEY_VOLUP" data-repeat aria-label="Volume up"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <span>VOL</span>
+        <button data-key="KEY_VOLDOWN" data-repeat aria-label="Volume down"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      </div>
+      <div class="grid">
+        <button class="k" data-key="KEY_RETURN" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+        <button class="k" data-key="KEY_MUTE" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg></button>
+        <button class="k" data-key="KEY_INFO">Info</button>
+      </div>
+      <div class="rocker">
+        <button data-key="KEY_CHUP" data-repeat aria-label="Channel up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+        <span>CH</span>
+        <button data-key="KEY_CHDOWN" data-repeat aria-label="Channel down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="label">Playback</div>
+    <div class="grid g4">
+      <button class="k" data-key="KEY_REWIND" aria-label="Rewind"><svg viewBox="0 0 24 24"><path d="M11 19L2 12l9-7zM22 19l-9-7 9-7z"/></svg></button>
+      <button class="k" data-key="KEY_PLAY" aria-label="Play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></button>
+      <button class="k" data-key="KEY_PAUSE" aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M7 4v16M17 4v16"/></svg></button>
+      <button class="k" data-key="KEY_FF" aria-label="Fast forward"><svg viewBox="0 0 24 24"><path d="M13 19l9-7-9-7zM2 19l9-7-9-7z"/></svg></button>
+    </div>
+
+    <div class="label">Color keys</div>
+    <div class="colors">
+      <button class="k" data-key="KEY_RED" style="background:#e53950" aria-label="Red"></button>
+      <button class="k" data-key="KEY_GREEN" style="background:#2fbf71" aria-label="Green"></button>
+      <button class="k" data-key="KEY_YELLOW" style="background:#f5c330" aria-label="Yellow"></button>
+      <button class="k" data-key="KEY_CYAN" style="background:#3a7bff" aria-label="Blue"></button>
+    </div>
+  </section>
+
+  <!-- TOUCH -->
+  <section id="touch">
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn ghost" id="modeBtn">Mode: Swipe (arrows)</button>
+    </div>
+    <div class="pad" id="pad"><span id="padHint">Swipe to navigate · Tap for OK · Long‑press for Back</span></div>
+    <div class="label">Scroll / page</div>
+    <div class="grid g4">
+      <button class="k" data-key="KEY_CHUP" data-repeat>Page ▲</button>
+      <button class="k" data-key="KEY_CHDOWN" data-repeat>Page ▼</button>
+      <button class="k" data-key="KEY_UP" data-repeat>Line ▲</button>
+      <button class="k" data-key="KEY_DOWN" data-repeat>Line ▼</button>
+    </div>
+    <div class="label">Type on TV</div>
+    <div class="row">
+      <input id="txt" placeholder="Search text…" autocomplete="off">
+      <button class="k" id="sendTxt">Send</button>
+    </div>
+    <div class="label">Open URL in TV browser</div>
+    <div class="row">
+      <input id="url" placeholder="https://…" inputmode="url" autocomplete="off">
+      <button class="k" id="sendUrl">Open</button>
+    </div>
+  </section>
+
+  <!-- KEYPAD -->
+  <section id="keypad">
+    <div class="grid g3">
+      <button class="k" data-key="KEY_1">1</button><button class="k" data-key="KEY_2">2</button><button class="k" data-key="KEY_3">3</button>
+      <button class="k" data-key="KEY_4">4</button><button class="k" data-key="KEY_5">5</button><button class="k" data-key="KEY_6">6</button>
+      <button class="k" data-key="KEY_7">7</button><button class="k" data-key="KEY_8">8</button><button class="k" data-key="KEY_9">9</button>
+      <button class="k" data-key="KEY_PRECH">Pre‑CH</button><button class="k" data-key="KEY_0">0</button><button class="k" data-key="KEY_CH_LIST">CH List</button>
+    </div>
+    <div class="label">More</div>
+    <div class="grid g3">
+      <button class="k" data-key="KEY_GUIDE">Guide</button>
+      <button class="k" data-key="KEY_CAPTION">Subtitles</button>
+      <button class="k" data-key="KEY_AD">Audio Desc</button>
+      <button class="k" data-key="KEY_PICTURE_SIZE">Pic Size</button>
+      <button class="k" data-key="KEY_PMODE">Pic Mode</button>
+      <button class="k" data-key="KEY_SLEEP">Sleep</button>
+      <button class="k" data-key="KEY_HDMI">HDMI</button>
+      <button class="k" data-key="KEY_TV">Live TV</button>
+      <button class="k" data-key="KEY_STOP">Stop</button>
+      <button class="k" data-key="KEY_REC">Record</button>
+      <button class="k" data-key="KEY_EXIT">Exit</button>
+      <button class="k" data-key="KEY_ESAVING">Eco</button>
+    </div>
+    <div class="label">Custom key</div>
+    <div class="row">
+      <input id="customKey" placeholder="KEY_..." autocapitalize="characters" autocomplete="off">
+      <button class="k" id="sendKey">Send</button>
+    </div>
+  </section>
+
+  <!-- APPS -->
+  <section id="apps">
+    <div class="apps" id="appGrid"></div>
+    <div class="label">Launch by app ID</div>
+    <div class="row">
+      <input id="appId" placeholder="e.g. 3201907018807" autocomplete="off">
+      <button class="k" id="launchApp">Launch</button>
+    </div>
+    <p class="hint" style="margin:10px 4px">App IDs can vary by region/model. If a tile does nothing, find the ID on your TV and launch it here.</p>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings">
+    <div class="card">
+      <div class="label" style="margin-top:0">TV IP address</div>
+      <input id="ip" placeholder="192.168.1.50" inputmode="decimal" autocomplete="off">
+      <div class="label">TV MAC (for Wake‑on‑LAN)</div>
+      <input id="mac" placeholder="AA:BB:CC:DD:EE:FF" autocomplete="off">
+      <div class="grid" style="margin-top:16px">
+        <button class="btn" id="save">Save &amp; pair</button>
+        <button class="btn ghost" id="wake">Wake TV (Wake‑on‑LAN)</button>
+      </div>
+      <p class="hint">Pairing: a prompt appears on your TV the first time; choose <b>Allow</b>. The token is saved on the bridge so you won't be asked again.</p>
+    </div>
+    <div class="label">Device</div>
+    <div class="card info" id="info"><span class="hint">No device info yet.</span></div>
+  </section>
+</div>
+
+<nav>
+  <button data-tab="remote" class="active"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="8" r="2"/></svg>Remote</button>
+  <button data-tab="touch"><svg viewBox="0 0 24 24"><path d="M9 11V5a2 2 0 0 1 4 0v6"/><path d="M13 10a2 2 0 0 1 4 0v4a6 6 0 0 1-12 0v-2a2 2 0 0 1 4 0"/></svg>Touch</button>
+  <button data-tab="keypad"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.5"/><circle cx="12" cy="6" r="1.5"/><circle cx="18" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/><circle cx="12" cy="18" r="1.5"/></svg>Keypad</button>
+  <button data-tab="apps"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Apps</button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const buzz = (ms = 12) => navigator.vibrate && navigator.vibrate(ms);
+let toastT;
+function toast(msg, err) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', 2200);
+}
+async function api(path, body) {
+  try {
+    const r = await fetch('/api/' + path, body !== undefined
+      ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'Request failed');
+    return j;
+  } catch (e) { toast(e.message, true); throw e; }
+}
+const key = (k) => api('key', { key: k }).catch(() => {});
+
+// Keys with hold-to-repeat
+document.querySelectorAll('[data-key]').forEach((b) => {
+  let timer, rep;
+  const stop = () => { clearTimeout(timer); clearInterval(rep); b.classList.remove('pressed'); };
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); buzz(); b.classList.add('pressed');
+    key(b.dataset.key);
+    if (b.hasAttribute('data-repeat')) timer = setTimeout(() => rep = setInterval(() => { buzz(6); key(b.dataset.key); }, 140), 420);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, stop));
+});
+
+// Tabs
+document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
+  buzz(8);
+  document.querySelectorAll('nav button, section').forEach((x) => x.classList.remove('active'));
+  b.classList.add('active'); $('#' + b.dataset.tab).classList.add('active');
+  if (b.dataset.tab === 'settings') refresh();
+});
+
+// Touchpad: swipe mode = arrows/OK/back; mouse mode = cursor move + click (TV browser)
+const pad = $('#pad'); let sx, sy, st, moved, lp, mouse = false, acc = { x: 0, y: 0 }, flushT;
+$('#modeBtn').onclick = () => {
+  mouse = !mouse; buzz(15);
+  $('#modeBtn').textContent = mouse ? 'Mode: Mouse (cursor)' : 'Mode: Swipe (arrows)';
+  $('#padHint').textContent = mouse ? 'Drag to move cursor · Tap to click · Use Page ▲▼ to scroll' : 'Swipe to navigate · Tap for OK · Long‑press for Back';
+};
+const flush = () => { flushT = null; if (acc.x || acc.y) { api('move', acc).catch(() => {}); acc = { x: 0, y: 0 }; } };
+pad.addEventListener('pointerdown', (e) => {
+  sx = e.clientX; sy = e.clientY; st = Date.now(); moved = false;
+  if (!mouse) lp = setTimeout(() => { if (!moved) { buzz(30); key('KEY_RETURN'); moved = true; } }, 600);
+});
+pad.addEventListener('pointermove', (e) => {
+  if (sx == null) return;
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  if (mouse) {
+    if (Math.hypot(dx, dy) > 2) moved = true;
+    acc.x += dx * 2.5; acc.y += dy * 2.5; sx = e.clientX; sy = e.clientY;
+    if (!flushT) flushT = setTimeout(flush, 40);
+    return;
+  }
+  if (Math.hypot(dx, dy) > 40) {
+    clearTimeout(lp); moved = true;
+    key(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'KEY_RIGHT' : 'KEY_LEFT') : (dy > 0 ? 'KEY_DOWN' : 'KEY_UP'));
+    buzz(8); sx = e.clientX; sy = e.clientY;
+  }
+});
+pad.addEventListener('pointerup', (e) => {
+  clearTimeout(lp);
+  if (!moved && Date.now() - st < 600) {
+    buzz();
+    if (mouse) api('click', {}).catch(() => {}); else key('KEY_ENTER');
+    const r = document.createElement('span'); r.className = 'ripple';
+    const box = pad.getBoundingClientRect();
+    r.style.left = (e.clientX - box.left) + 'px'; r.style.top = (e.clientY - box.top) + 'px';
+    pad.appendChild(r); setTimeout(() => r.remove(), 450);
+  }
+  sx = null;
+});
+
+$('#sendTxt').onclick = () => api('text', { text: $('#txt').value }).then(() => { toast('Sent to TV'); $('#txt').value = ''; }).catch(() => {});
+$('#txt').onkeydown = (e) => e.key === 'Enter' && $('#sendTxt').click();
+$('#sendUrl').onclick = () => api('browser', { url: $('#url').value.trim() }).then(() => toast('Opening browser')).catch(() => {});
+$('#sendKey').onclick = () => { const k = $('#customKey').value.trim().toUpperCase(); key(k.startsWith('KEY_') ? k : 'KEY_' + k); };
+
+// Apps (common Tizen IDs — may vary by region)
+const APPS = [
+  ['Netflix', '3201907018807', '#e50914', 'N'],
+  ['YouTube', '111299001912', '#ff0033', '▶'],
+  ['Prime Video', '3201910019365', '#00a8e1', 'p'],
+  ['Disney+', '3201901017640', '#0f3a8c', 'D+'],
+  ['Spotify', '3201606009684', '#1db954', '♫'],
+  ['Apple TV', '3201807016597', '#222', ''],
+  ['Plex', '3201512006963', '#e5a00d', '›'],
+  ['Browser', 'org.tizen.browser', '#4b5bdc', '◎'],
+];
+$('#appGrid').innerHTML = APPS.map(([n, id, c, g]) =>
+  `<button class="app-tile" data-app="${id}" style="background:linear-gradient(150deg,${c},#0006),${c}"><i>${g}</i>${n}</button>`).join('');
+$('#appGrid').onclick = (e) => {
+  const t = e.target.closest('[data-app]'); if (!t) return;
+  buzz(); api('app', { appId: t.dataset.app }).then(() => toast('Launching ' + t.textContent.trim())).catch(() => {});
+};
+$('#launchApp').onclick = () => api('app', { appId: $('#appId').value.trim() }).then(() => toast('Launching')).catch(() => {});
+
+// Settings / status
+$('#save').onclick = async () => {
+  await api('config', { ip: $('#ip').value, mac: $('#mac').value }).catch(() => {});
+  toast('Check your TV for a pairing prompt…');
+  api('pair', {}).then(() => { toast('Paired ✓'); refresh(); }).catch(() => {});
+};
+$('#wake').onclick = () => api('wake', {}).then(() => toast('Magic packet sent')).catch(() => {});
+
+async function refresh() {
+  try {
+    const s = await (await fetch('/api/status')).json();
+    if (document.activeElement !== $('#ip')) $('#ip').value = s.ip || '';
+    if (document.activeElement !== $('#mac')) $('#mac').value = s.mac || '';
+    $('#dot').className = 'dot ' + (s.online ? 'on' : 'off');
+    $('#stat').textContent = !s.ip ? 'Not configured' : s.online ? (s.paired ? 'Connected' : 'Online · not paired') : 'Offline';
+    if (s.info) {
+      $('#tvName').textContent = s.info.name || 'Samsung TV';
+      const rows = { Model: s.info.modelName, Name: s.info.name, OS: s.info.OS, Resolution: s.info.resolution, 'Power': s.info.PowerState, Network: s.info.networkType, MAC: s.info.wifiMac, 'Frame TV': s.info.FrameTVSupport };
+      $('#info').innerHTML = Object.entries(rows).filter(([, v]) => v).map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('');
+      if (!s.mac && s.info.wifiMac) $('#mac').value = s.info.wifiMac;
+    }
+    if (!s.ip) document.querySelector('[data-tab=settings]').click();
+  } catch {}
+}
+refresh(); setInterval(refresh, 15000);
+</script>
+</body>
+</html>
